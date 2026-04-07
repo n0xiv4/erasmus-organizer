@@ -47,6 +47,7 @@ async function handleAuth(e) {
 async function initApp() {
   document.getElementById('loginState').style.display = 'none';
   document.getElementById('mainContent').style.display = 'block';
+  document.getElementById('headerRight').style.display = '';
   document.getElementById('headerStatus').innerText = `Logged in as ${user.email}`;
   document.getElementById('fabAdd').style.display = 'flex';
 
@@ -755,13 +756,19 @@ function populateGlobalDateFilter() {
   
   transactions.forEach(t => {
     const dt = new Date(t.date.replace(/\//g, '-'));
-    months.add(dt.toISOString().slice(0, 7)); // YYYY-MM
-    
-    // Monday of the week
-    const weekStart = new Date(dt);
-    weekStart.setDate(dt.getDate() - dt.getDay() + 1);
-    weekStart.setHours(0, 0, 0, 0);
-    weeks.add(weekStart.toISOString().slice(0, 10));
+    if (!isNaN(dt.getTime())) {
+      const pad = n => n.toString().padStart(2, '0');
+      months.add(`${dt.getFullYear()}-${pad(dt.getMonth() + 1)}`); // YYYY-MM
+      
+      // Monday of the week
+      const weekStart = new Date(dt);
+      weekStart.setDate(dt.getDate() - dt.getDay() + 1);
+      weekStart.setHours(0, 0, 0, 0);
+      const wY = weekStart.getFullYear();
+      const wM = pad(weekStart.getMonth() + 1);
+      const wD = pad(weekStart.getDate());
+      weeks.add(`${wY}-${wM}-${wD}`);
+    }
   });
 
   const optgroupMonths = document.createElement('optgroup');
@@ -793,10 +800,14 @@ function populateGlobalDateFilter() {
 function isDateInFilter(dateStr) {
   if (globalDateFilter === 'all') return true;
   const d = new Date(dateStr.replace(/\//g, '-'));
+  if (isNaN(d.getTime())) return true; // invalid date, don't throw
+  
+  const pad = n => n.toString().padStart(2, '0');
   
   if (globalDateFilter.startsWith('month:')) {
     const yyyymm = globalDateFilter.split(':')[1];
-    return d.toISOString().slice(0, 7) === yyyymm;
+    const m = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+    return m === yyyymm;
   }
   
   if (globalDateFilter.startsWith('week:')) {
