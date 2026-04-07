@@ -20,6 +20,7 @@ let globalDateFilter = 'all';
 let spendingChart = null;
 let categoryChart = null;
 let timeView = 'daily';
+let editingExpenseId = null;
 
 // ---- Auth Logic ----
 async function handleAuth(e) {
@@ -79,6 +80,7 @@ async function fetchData() {
   transactions = data;
   populateCategoryFilter();
   populateGlobalDateFilter();
+  populateMerchantList();
   render();
 }
 
@@ -87,7 +89,9 @@ async function handleNewExpense(e) {
   e.preventDefault();
   const date = document.getElementById('expDate').value; // Supabase likes YYYY-MM-DD
   const merchant = document.getElementById('expMerchant').value;
-  const amount = -Math.abs(parseFloat(document.getElementById('expAmount').value));
+  const type = document.querySelector('input[name="expType"]:checked').value;
+  const rawAmount = parseFloat(document.getElementById('expAmount').value);
+  const amount = type === 'expense' ? -Math.abs(rawAmount) : Math.abs(rawAmount);
   const category = document.getElementById('expCategory').value;
   const city = document.getElementById('expCity').value;
   const country = document.getElementById('expCountry').value;
@@ -105,15 +109,52 @@ async function handleNewExpense(e) {
     user_id: user.id
   };
 
-  const { error } = await supabaseClient.from('spendings').insert([newEntry]);
+  let error;
+  if (editingExpenseId) {
+    const res = await supabaseClient.from('spendings').update(newEntry).eq('id', editingExpenseId);
+    error = res.error;
+  } else {
+    const res = await supabaseClient.from('spendings').insert([newEntry]);
+    error = res.error;
+  }
 
   if (error) {
     alert('Error saving spending: ' + error.message);
   } else {
     toggleModal(false);
-    document.getElementById('addExpenseForm').reset();
     await fetchData();
   }
+}
+
+function editExpense(id) {
+  const t = transactions.find(x => x.id === id);
+  if (!t) return;
+  
+  editingExpenseId = id;
+  
+  let dtStr = t.date;
+  if (dtStr.includes('/')) dtStr = dtStr.replace(/\//g, '-');
+  const dt = new Date(dtStr);
+  if (!isNaN(dt.getTime())) {
+    const pad = n => n.toString().padStart(2, '0');
+    document.getElementById('expDate').value = `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}`;
+  } else {
+    document.getElementById('expDate').value = dtStr;
+  }
+  
+  document.getElementById('expMerchant').value = t.merchant;
+  const typeValue = t.amount_eur < 0 ? 'expense' : 'income';
+  document.querySelector(`input[name="expType"][value="${typeValue}"]`).checked = true;
+  document.getElementById('expAmount').value = Math.abs(t.amount_eur);
+  document.getElementById('expCategory').value = t.category;
+  document.getElementById('expCity').value = t.city;
+  document.getElementById('expCountry').value = t.country;
+  document.getElementById('expNotes').value = t.notes || '';
+  
+  document.querySelector('.modal-header h3').textContent = 'Edit Spending';
+  document.querySelector('#addExpenseForm button[type="submit"]').textContent = 'Update Expense';
+  
+  toggleModal(true);
 }
 
 async function deleteExpense(id) {
@@ -262,6 +303,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupTimeChartTabs();
   setupFileUpload();
   setupGlobalDateFilter();
+  setupMerchantAutocomplete();
 
   // Check if session exists
   const { data: { session } } = await supabaseClient.auth.getSession();
@@ -326,7 +368,30 @@ function toggleModal(show) {
   const overlay = document.getElementById('modalOverlay');
   overlay.className = show ? 'modal-overlay active' : 'modal-overlay';
   if (show) {
-    document.getElementById('expDate').valueAsDate = new Date();
+    if (!editingExpenseId) {
+      if (transactions && transactions.length > 0) {
+        let dtStr = transactions[0].date;
+        if (dtStr.includes('/')) dtStr = dtStr.replace(/\//g, '-');
+        const dt = new Date(dtStr);
+        if (!isNaN(dt.getTime())) {
+          const pad = n => n.toString().padStart(2, '0');
+          document.getElementById('expDate').value = `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}`;
+        } else {
+          document.getElementById('expDate').valueAsDate = new Date();
+        }
+        
+        document.getElementById('expCity').value = transactions[0].city || '';
+        document.getElementById('expCountry').value = transactions[0].country || '';
+      } else {
+        document.getElementById('expDate').valueAsDate = new Date();
+      }
+    }
+  } else {
+    editingExpenseId = null;
+    document.getElementById('addExpenseForm').reset();
+    document.querySelector('input[name="expType"][value="expense"]').checked = true;
+    document.querySelector('.modal-header h3').textContent = 'Add New Spending';
+    document.querySelector('#addExpenseForm button[type="submit"]').textContent = 'Save Expense';
   }
 }
 
@@ -708,6 +773,25 @@ function renderCategoryChart() {
   });
 }
 
+// ---- Merchant Autocomplete ----
+function populateMerchantList() {
+  const datalist = document.getElementById('merchantList');
+  const merchants = [...new Set(transactions.map(t => t.merchant))].sort((a, b) => a.localeCompare(b));
+  datalist.innerHTML = merchants.map(m => `<option value="${m.replace(/"/g, '&quot;')}">`).join('');
+}
+
+function setupMerchantAutocomplete() {
+  const input = document.getElementById('expMerchant');
+  input.addEventListener('input', (e) => {
+    const val = e.target.value.trim().toLowerCase();
+    if (!val) return;
+    const match = transactions.find(t => t.merchant.toLowerCase() === val);
+    if (match) {
+      document.getElementById('expCategory').value = match.category;
+    }
+  });
+}
+
 // ---- Search & Filter ----
 function setupSearch() {
   document.getElementById('searchInput').addEventListener('input', e => {
@@ -903,6 +987,9 @@ function renderTable() {
         <td class="td-city">${flag} ${t.city}</td>
         <td class="td-amount ${amtClass}">${fmtSigned(amt)}</td>
         <td class="td-actions text-right">
+          <button class="edit-inline-btn" onclick="editExpense('${t.id}')" title="Edit Expense">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
           <button class="delete-inline-btn" onclick="deleteExpense('${t.id}')" title="Delete Expense">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
           </button>

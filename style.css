@@ -331,6 +331,19 @@ body {
   font-size: 0.78rem;
 }
 
+.primary-btn {
+  padding: 0.8rem 1.5rem;
+  background: var(--accent-blue);
+  color: white;
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
 .primary-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px var(--accent-blue-glow);
@@ -358,6 +371,24 @@ body {
   border-color: var(--border-hover);
 }
 
+.edit-inline-btn {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-inline-btn:hover {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--accent-blue);
+}
+
 .delete-inline-btn {
   background: none;
   border: none;
@@ -366,10 +397,9 @@ body {
   padding: 4px;
   border-radius: 4px;
   transition: all 0.2s;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-left: auto;
 }
 
 .delete-inline-btn:hover {
@@ -487,6 +517,43 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-md);
+}
+
+.type-toggle {
+  display: flex;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-md);
+  padding: 4px;
+  background: rgba(17, 24, 39, 0.4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.type-toggle label {
+  flex: 1;
+  text-align: center;
+  padding: 0.6rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.type-toggle input[type="radio"] {
+  display: none;
+}
+
+.type-toggle label:has(input[value="expense"]:checked) {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--accent-rose);
+}
+
+.type-toggle label:has(input[value="income"]:checked) {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--accent-emerald);
 }
 
 .modal-footer {
