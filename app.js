@@ -85,6 +85,7 @@ async function handleNewExpense(e) {
   const amount = -Math.abs(parseFloat(document.getElementById('expAmount').value));
   const category = document.getElementById('expCategory').value;
   const city = document.getElementById('expCity').value;
+  const country = document.getElementById('expCountry').value;
   const notes = document.getElementById('expNotes').value;
 
   const newEntry = {
@@ -95,7 +96,7 @@ async function handleNewExpense(e) {
     category,
     notes,
     city,
-    country: 'Poland', // Example default
+    country,
     user_id: user.id
   };
 
@@ -106,6 +107,16 @@ async function handleNewExpense(e) {
   } else {
     toggleModal(false);
     document.getElementById('addExpenseForm').reset();
+    await fetchData();
+  }
+}
+
+async function deleteExpense(id) {
+  if (!confirm("Are you sure you want to delete this specific spending?")) return;
+  const { error } = await supabaseClient.from('spendings').delete().eq('id', id);
+  if (error) {
+    alert("Error deleting: " + error.message);
+  } else {
     await fetchData();
   }
 }
@@ -770,6 +781,11 @@ function renderTable() {
         <td class="td-notes">${t.notes}</td>
         <td class="td-city">${flag} ${t.city}</td>
         <td class="td-amount ${amtClass}">${fmtSigned(amt)}</td>
+        <td class="td-actions text-right">
+          <button class="delete-inline-btn" onclick="deleteExpense('${t.id}')" title="Delete Expense">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+          </button>
+        </td>
       </tr>`;
   }).join('');
 }

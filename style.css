@@ -357,7 +357,27 @@ body {
   border-color: var(--border-hover);
 }
 
+.delete-inline-btn {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+}
+
+.delete-inline-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--accent-rose);
+}
+
 /* ---- FAB & Modal ---- */
+
 .fab-add {
   position: fixed;
   bottom: 2rem;

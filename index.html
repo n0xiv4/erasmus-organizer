@@ -188,6 +188,7 @@
               <th>Notes</th>
               <th>City</th>
               <th class="sortable text-right" data-sort="amount">Amount <span class="sort-icon">↕</span></th>
+              <th class="text-right">Action</th>
             </tr>
           </thead>
           <tbody id="transactionsBody"></tbody>
@@ -234,9 +235,15 @@
               <input type="text" id="expCity" placeholder="e.g. Kraków" required />
             </div>
           </div>
-          <div class="form-group">
-            <label>Notes (Optional)</label>
-            <input type="text" id="expNotes" placeholder="e.g. Snacks, Dinner..." />
+          <div class="form-row">
+            <div class="form-group">
+              <label>Country</label>
+              <input type="text" id="expCountry" placeholder="e.g. Poland" required />
+            </div>
+            <div class="form-group">
+              <label>Notes (Optional)</label>
+              <input type="text" id="expNotes" placeholder="e.g. Snacks, Dinner..." />
+            </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="secondary-btn" onclick="toggleModal(false)">Cancel</button>
