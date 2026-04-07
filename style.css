@@ -1126,9 +1126,17 @@ body {
   }
 
   /* Horizontally scrollable table */
+  .section {
+    width: 100%;
+    max-width: 100vw;
+  }
   .table-wrapper {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    width: 100%;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
   }
   .transactions-table {
     min-width: 700px;
@@ -1153,11 +1161,34 @@ body {
   }
 
   /* Header tweaks */
+  .header {
+    gap: 16px;
+  }
   .logo h1 {
     font-size: 1.3rem;
   }
   .header-right {
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    width: 100%;
+    gap: var(--space-sm);
+  }
+  
+  #globalDateFilter, #dateRange {
+    grid-column: span 2;
+  }
+
+  .currency-toggle {
+    width: 100%;
+  }
+  .currency-toggle .currency-btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .export-btn, .load-btn, .logout-btn {
+    justify-content: center;
+    width: 100%;
   }
 }
 

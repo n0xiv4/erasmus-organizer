@@ -34,9 +34,12 @@
         </div>
       </div>
       <div class="header-right">
+        <select id="globalDateFilter" class="filter-select">
+          <option value="all">All Time</option>
+        </select>
         <div class="date-range-badge" id="dateRange">
           <span class="icon-calendar"></span>
-          Waiting for data...
+          Waiting...
         </div>
         <div class="currency-toggle" id="currencyToggle">
           <button class="currency-btn active" data-currency="EUR">€ EUR</button>
@@ -132,6 +135,7 @@
           <div class="chart-tabs" id="timeChartTabs">
             <button class="chart-tab active" data-view="daily">Daily</button>
             <button class="chart-tab" data-view="weekly">Weekly</button>
+            <button class="chart-tab" data-view="monthly">Monthly</button>
           </div>
         </div>
         <div class="chart-body">

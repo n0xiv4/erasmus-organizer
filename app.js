@@ -6,6 +6,7 @@
 const SUPABASE_URL = 'https://kcmlrxswoiiunkreruvh.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_Qg-uAvbjaRWvaf099xDeBg_q0oKJJue';
 const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+const EXCHANGE_RATE_PLN = 4.26;
 
 // ---- State ----
 let transactions = [];
@@ -15,6 +16,7 @@ let sortField = 'date';
 let sortDir = 'desc';
 let searchQuery = '';
 let filterCategory = 'all';
+let globalDateFilter = 'all';
 let spendingChart = null;
 let categoryChart = null;
 let timeView = 'daily';
@@ -74,6 +76,8 @@ async function fetchData() {
   }
 
   transactions = data;
+  populateCategoryFilter();
+  populateGlobalDateFilter();
   render();
 }
 
@@ -92,7 +96,7 @@ async function handleNewExpense(e) {
     date,
     merchant,
     amount_eur: amount,
-    amount_pln: amount * 4.2,
+    amount_pln: amount * EXCHANGE_RATE_PLN,
     category,
     notes,
     city,
@@ -153,7 +157,46 @@ const CATEGORY_CONFIG = {
 const COUNTRY_FLAGS = {
   'Poland': '🇵🇱',
   'Denmark': '🇩🇰',
+  'Germany': '🇩🇪',
+  'France': '🇫🇷',
+  'Spain': '🇪🇸',
+  'Italy': '🇮🇹',
+  'Portugal': '🇵🇹',
+  'Sweden': '🇸🇪',
+  'Norway': '🇳🇴',
+  'Finland': '🇫🇮',
+  'Czech Republic': '🇨🇿',
+  'Czechia': '🇨🇿',
+  'Slovakia': '🇸🇰',
+  'Hungary': '🇭🇺',
+  'Austria': '🇦🇹',
+  'Switzerland': '🇨🇭',
+  'Netherlands': '🇳🇱',
+  'Belgium': '🇧🇪',
+  'UK': '🇬🇧',
+  'United Kingdom': '🇬🇧',
+  'Ireland': '🇮🇪',
+  'Greece': '🇬🇷',
+  'Croatia': '🇭🇷',
+  'Lithuania': '🇱🇹',
+  'Latvia': '🇱🇻',
+  'Estonia': '🇪🇪',
+  'Romania': '🇷🇴',
+  'Bulgaria': '🇧🇬',
+  'Slovenia': '🇸🇮',
+  'Cyprus': '🇨🇾',
+  'Malta': '🇲🇹',
+  'Iceland': '🇮🇸',
+  'USA': '🇺🇸',
+  'Turkey': '🇹🇷'
 };
+
+function getFlag(country) {
+  if (!country) return '🌍';
+  const name = country.trim();
+  const match = Object.keys(COUNTRY_FLAGS).find(k => k.toLowerCase() === name.toLowerCase());
+  return match ? COUNTRY_FLAGS[match] : '🌍';
+}
 
 // ---- Parse CSV ----
 function parseCSV(raw) {
@@ -217,6 +260,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupSortHeaders();
   setupTimeChartTabs();
   setupFileUpload();
+  setupGlobalDateFilter();
 
   // Check if session exists
   const { data: { session } } = await supabaseClient.auth.getSession();
@@ -285,47 +329,15 @@ function toggleModal(show) {
   }
 }
 
-function handleNewExpense(e) {
-  e.preventDefault();
-  const date = document.getElementById('expDate').value.replace(/-/g, '/');
-  const merchant = document.getElementById('expMerchant').value;
-  const amount = -Math.abs(parseFloat(document.getElementById('expAmount').value));
-  const category = document.getElementById('expCategory').value;
-  const city = document.getElementById('expCity').value;
-  const notes = document.getElementById('expNotes').value;
-
-  const newEntry = {
-    date,
-    merchant,
-    amountEur: amount,
-    amountPln: amount * 4.2, // Default conversion
-    category,
-    notes,
-    city,
-    country: transactions.length ? transactions[0].country : 'Poland' // Guess from existing
-  };
-
-  transactions.unshift(newEntry);
-
-  // Update storage
-  const pass = sessionStorage.getItem('temp_pass') || '';
-  const csvContent = transactionsToCSV(transactions);
-  localStorage.setItem(STORAGE_KEY, encrypt(csvContent, pass));
-
-  toggleModal(false);
-  document.getElementById('addExpenseForm').reset();
-  render();
-}
-
 function transactionsToCSV(data) {
   const header = 'Date,Merchant,Amount_EUR,Amount_PLN,Category,Notes,City,Country';
   const rows = data.map(t => [
     t.date,
     `"${t.merchant.replace(/"/g, '""')}"`,
-    `"${t.amountEur.toFixed(2).replace('.', ',')} €"`,
-    `"${t.amountPln.toFixed(2).replace('.', ',')}"`,
+    `"${Number(t.amount_eur || 0).toFixed(2).replace('.', ',')} €"`,
+    `"${Number(t.amount_pln || 0).toFixed(2).replace('.', ',')}"`,
     t.category,
-    `"${t.notes.replace(/"/g, '""')}"`,
+    `"${(t.notes || '').replace(/"/g, '""')}"`,
     t.city,
     t.country
   ].join(','));
@@ -372,9 +384,9 @@ function setupCurrencyToggle() {
 // ---- Helpers ----
 function getAmount(t) {
   if (currency === 'EUR') {
-    return t.amount_eur !== 0 ? t.amount_eur : (t.amount_pln / 4.2);
+    return t.amount_eur !== 0 ? t.amount_eur : (t.amount_pln / EXCHANGE_RATE_PLN);
   }
-  return t.amount_pln !== 0 ? t.amount_pln : (t.amount_eur * 4.2);
+  return t.amount_pln !== 0 ? t.amount_pln : (t.amount_eur * EXCHANGE_RATE_PLN);
 }
 
 function fmt(val) {
@@ -395,7 +407,7 @@ function fmtSigned(val) {
 }
 
 function getExpenses() {
-  return transactions.filter(t => getAmount(t) < 0);
+  return transactions.filter(t => getAmount(t) < 0 && isDateInFilter(t.date));
 }
 
 function getCatConfig(cat) {
@@ -404,9 +416,13 @@ function getCatConfig(cat) {
 
 // ---- Date Range ----
 function renderDateRange() {
-  const dates = transactions.map(t => new Date(t.date.replace(/\//g, '-')));
-  const min = new Date(Math.min(...dates));
-  const max = new Date(Math.max(...dates));
+  const activeDates = transactions.filter(t => isDateInFilter(t.date)).map(t => new Date(t.date.replace(/\//g, '-')));
+  if (!activeDates.length) {
+    document.getElementById('dateRange').textContent = '📅 No data in range';
+    return;
+  }
+  const min = new Date(Math.min(...activeDates));
+  const max = new Date(Math.max(...activeDates));
   const opts = { month: 'short', day: 'numeric' };
   document.getElementById('dateRange').textContent =
     `📅 ${min.toLocaleDateString('en-US', opts)} – ${max.toLocaleDateString('en-US', opts)}, ${max.getFullYear()}`;
@@ -480,7 +496,7 @@ function renderCityGrid() {
   const sorted = Object.values(cityData).sort((a, b) => b.total - a.total);
 
   grid.innerHTML = sorted.map((cd, i) => {
-    const flag = COUNTRY_FLAGS[cd.country] || '🌍';
+    const flag = getFlag(cd.country);
     return `
       <div class="city-card" style="animation-delay:${i * 0.06}s">
         <div class="city-header">
@@ -530,7 +546,7 @@ function renderSpendingChart() {
       return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     });
     data = sortedDates.map(d => dateMap[d]);
-  } else {
+  } else if (timeView === 'weekly') {
     // Weekly
     const weekMap = {};
     Object.entries(dateMap).forEach(([d, amt]) => {
@@ -546,6 +562,20 @@ function renderSpendingChart() {
       return `Week of ${dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
     });
     data = sortedWeeks.map(w => weekMap[w]);
+  } else if (timeView === 'monthly') {
+    // Monthly
+    const monthMap = {};
+    Object.entries(dateMap).forEach(([d, amt]) => {
+      const dt = new Date(d.replace(/\//g, '-'));
+      const key = dt.toISOString().slice(0, 7); // YYYY-MM
+      monthMap[key] = (monthMap[key] || 0) + amt;
+    });
+    const sortedMonths = Object.keys(monthMap).sort();
+    labels = sortedMonths.map(m => {
+      const dt = new Date(m + '-01T00:00:00');
+      return dt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    });
+    data = sortedMonths.map(m => monthMap[m]);
   }
 
   if (spendingChart) spendingChart.destroy();
@@ -687,17 +717,97 @@ function setupSearch() {
 
 function setupCategoryFilter() {
   const select = document.getElementById('categoryFilter');
+  select.addEventListener('change', e => {
+    filterCategory = e.target.value;
+    renderTable();
+  });
+}
+
+function populateCategoryFilter() {
+  const select = document.getElementById('categoryFilter');
+  const currentVal = filterCategory || 'all';
+  select.innerHTML = '<option value="all">All Categories</option>';
   const cats = [...new Set(transactions.map(t => t.category))].sort();
   cats.forEach(cat => {
     const opt = document.createElement('option');
     opt.value = cat;
     opt.textContent = `${getCatConfig(cat).icon} ${cat}`;
+    if (currentVal === cat) opt.selected = true;
     select.appendChild(opt);
   });
-  select.addEventListener('change', e => {
-    filterCategory = e.target.value;
-    renderTable();
+}
+
+function setupGlobalDateFilter() {
+  document.getElementById('globalDateFilter').addEventListener('change', e => {
+    globalDateFilter = e.target.value;
+    render();
   });
+}
+
+function populateGlobalDateFilter() {
+  const select = document.getElementById('globalDateFilter');
+  const currentVal = globalDateFilter || 'all';
+  
+  select.innerHTML = '<option value="all">All Time</option>';
+  
+  const months = new Set();
+  const weeks = new Set();
+  
+  transactions.forEach(t => {
+    const dt = new Date(t.date.replace(/\//g, '-'));
+    months.add(dt.toISOString().slice(0, 7)); // YYYY-MM
+    
+    // Monday of the week
+    const weekStart = new Date(dt);
+    weekStart.setDate(dt.getDate() - dt.getDay() + 1);
+    weekStart.setHours(0, 0, 0, 0);
+    weeks.add(weekStart.toISOString().slice(0, 10));
+  });
+
+  const optgroupMonths = document.createElement('optgroup');
+  optgroupMonths.label = "Months";
+  Array.from(months).sort().reverse().forEach(m => {
+    const dt = new Date(m + '-01T00:00:00');
+    const opt = document.createElement('option');
+    opt.value = 'month:' + m;
+    opt.textContent = dt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    if (currentVal === opt.value) opt.selected = true;
+    optgroupMonths.appendChild(opt);
+  });
+  
+  const optgroupWeeks = document.createElement('optgroup');
+  optgroupWeeks.label = "Weeks";
+  Array.from(weeks).sort().reverse().forEach(w => {
+    const dt = new Date(w);
+    const opt = document.createElement('option');
+    opt.value = 'week:' + w;
+    opt.textContent = `Week of ${dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    if (currentVal === opt.value) opt.selected = true;
+    optgroupWeeks.appendChild(opt);
+  });
+
+  if (optgroupMonths.children.length > 0) select.appendChild(optgroupMonths);
+  if (optgroupWeeks.children.length > 0) select.appendChild(optgroupWeeks);
+}
+
+function isDateInFilter(dateStr) {
+  if (globalDateFilter === 'all') return true;
+  const d = new Date(dateStr.replace(/\//g, '-'));
+  
+  if (globalDateFilter.startsWith('month:')) {
+    const yyyymm = globalDateFilter.split(':')[1];
+    return d.toISOString().slice(0, 7) === yyyymm;
+  }
+  
+  if (globalDateFilter.startsWith('week:')) {
+    const weekStr = globalDateFilter.split(':')[1];
+    const weekStart = new Date(weekStr);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 7);
+    return d >= weekStart && d < weekEnd;
+  }
+  
+  return true;
 }
 
 // ---- Sort Headers ----
@@ -721,7 +831,7 @@ function setupSortHeaders() {
 
 // ---- Transactions Table ----
 function renderTable() {
-  let filtered = [...transactions];
+  let filtered = transactions.filter(t => isDateInFilter(t.date));
 
   // Filter
   if (filterCategory !== 'all') {
@@ -766,7 +876,7 @@ function renderTable() {
     const cfg = getCatConfig(t.category);
     const dt = new Date(t.date.replace(/\//g, '-'));
     const dateStr = dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    const flag = COUNTRY_FLAGS[t.country] || '🌍';
+    const flag = getFlag(t.country);
 
     return `
       <tr>
