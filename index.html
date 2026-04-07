@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Erasmus+ Spending Tracker</title>
+  <meta name="description" content="Track and visualize your Erasmus+ programme spending with beautiful charts and category breakdowns." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@latest/font/lucide.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Ambient background blobs -->
+  <div class="ambient-bg">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header" id="header">
+      <div class="header-left">
+        <div class="logo">
+          <span class="logo-icon">🇪🇺</span>
+          <div>
+            <h1>Erasmus+ Tracker</h1>
+            <p class="header-subtitle" id="headerStatus">Spending Overview · Cloud Private</p>
+          </div>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="date-range-badge" id="dateRange">
+          <span class="icon-calendar"></span>
+          Waiting for data...
+        </div>
+        <div class="currency-toggle" id="currencyToggle">
+          <button class="currency-btn active" data-currency="EUR">€ EUR</button>
+          <button class="currency-btn" data-currency="PLN">zł PLN</button>
+        </div>
+        <button class="export-btn" onclick="exportToCSV()" title="Download Updated CSV">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export
+        </button>
+        <label class="load-btn" for="csvUpload">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Load CSV
+          <input type="file" id="csvUpload" accept=".csv" style="display:none" />
+        </label>
+        <button class="logout-btn" onclick="clearData()" title="Clear Data & Sign Out">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Login State -->
+    <div id="loginState" class="login-portal">
+      <div class="login-card">
+        <div class="login-header">
+          <span class="auth-icon">🔐</span>
+          <h2>Welcome Back</h2>
+          <p>Access your private Erasmus+ dashboard</p>
+        </div>
+        <form class="auth-form" id="loginForm" onsubmit="handleAuth(event)">
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="authEmail" placeholder="you@erasmus.com" required />
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="authPass" placeholder="••••••••" required />
+          </div>
+          <button type="submit" class="primary-btn full-width" id="authBtn">Enter Dashboard</button>
+        </form>
+        <div class="login-footer">
+          <p>Locked with end-to-end cloud security</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="mainContent" style="display: none;">
+
+    <!-- Stats Cards -->
+    <section class="stats-grid" id="statsGrid">
+      <div class="stat-card stat-total" id="statTotal">
+        <div class="stat-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Total Spent</span>
+          <span class="stat-value" id="totalSpent">–</span>
+        </div>
+      </div>
+      <div class="stat-card stat-avg" id="statAvg">
+        <div class="stat-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Daily Average</span>
+          <span class="stat-value" id="dailyAvg">–</span>
+        </div>
+      </div>
+      <div class="stat-card stat-transactions" id="statTransactions">
+        <div class="stat-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Transactions</span>
+          <span class="stat-value" id="transactionCount">–</span>
+        </div>
+      </div>
+      <div class="stat-card stat-top" id="statTop">
+        <div class="stat-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <div class="stat-content">
+          <span class="stat-label">Top Category</span>
+          <span class="stat-value stat-value-sm" id="topCategory">–</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Charts Row -->
+    <section class="charts-row">
+      <div class="chart-card" id="chartSpendingOverTime">
+        <div class="chart-header">
+          <h2>Spending Over Time</h2>
+          <div class="chart-tabs" id="timeChartTabs">
+            <button class="chart-tab active" data-view="daily">Daily</button>
+            <button class="chart-tab" data-view="weekly">Weekly</button>
+          </div>
+        </div>
+        <div class="chart-body">
+          <canvas id="spendingChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-card chart-card-sm" id="chartCategoryBreakdown">
+        <div class="chart-header">
+          <h2>Category Breakdown</h2>
+        </div>
+        <div class="chart-body chart-body-donut">
+          <canvas id="categoryChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Category Cards -->
+    <section class="section">
+      <div class="section-header">
+        <h2>Spending by Category</h2>
+      </div>
+      <div class="category-grid" id="categoryGrid"></div>
+    </section>
+
+    <!-- City Comparison -->
+    <section class="section">
+      <div class="section-header">
+        <h2>Spending by City</h2>
+      </div>
+      <div class="city-grid" id="cityGrid"></div>
+    </section>
+
+    <!-- Transactions Table -->
+    <section class="section">
+      <div class="section-header">
+        <h2>All Transactions</h2>
+        <div class="table-controls">
+          <div class="search-box" id="searchBox">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="searchInput" placeholder="Search transactions..." />
+          </div>
+          <select id="categoryFilter" class="filter-select">
+            <option value="all">All Categories</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrapper" id="tableWrapper">
+        <table class="transactions-table" id="transactionsTable">
+          <thead>
+            <tr>
+              <th class="sortable" data-sort="date">Date <span class="sort-icon">↕</span></th>
+              <th class="sortable" data-sort="merchant">Merchant <span class="sort-icon">↕</span></th>
+              <th>Category</th>
+              <th>Notes</th>
+              <th>City</th>
+              <th class="sortable text-right" data-sort="amount">Amount <span class="sort-icon">↕</span></th>
+            </tr>
+          </thead>
+          <tbody id="transactionsBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    </div>
+
+    <!-- Floating Add Button -->
+    <button class="fab-add" onclick="toggleModal(true)" id="fabAdd" style="display: none;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+
+    <!-- Add Expense Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>Add New Spending</h3>
+          <button class="close-btn" onclick="toggleModal(false)">&times;</button>
+        </div>
+        <form class="modal-form" id="addExpenseForm" onsubmit="handleNewExpense(event)">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Date</label>
+              <input type="date" id="expDate" required />
+            </div>
+            <div class="form-group">
+              <label>Amount (EUR)</label>
+              <input type="number" step="0.01" id="expAmount" placeholder="0.00" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Merchant</label>
+            <input type="text" id="expMerchant" placeholder="e.g. Żabka, Uber..." required />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Category</label>
+              <select id="expCategory" required></select>
+            </div>
+            <div class="form-group">
+              <label>City</label>
+              <input type="text" id="expCity" placeholder="e.g. Kraków" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Notes (Optional)</label>
+            <input type="text" id="expNotes" placeholder="e.g. Snacks, Dinner..." />
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="secondary-btn" onclick="toggleModal(false)">Cancel</button>
+            <button type="submit" class="primary-btn">Save Expense</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <p>Erasmus+ Spending Tracker · Data from Feb 22 – Mar 16, 2026</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

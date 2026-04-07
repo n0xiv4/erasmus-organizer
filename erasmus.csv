@@ -1,0 +1,94 @@
+Date,Merchant,Amount_EUR,Amount_PLN,Category,Notes,City,Country
+2026/02/22,Babilon Pizzeria,"-8,17 €",-34,Food & Drink,Dinner,Kraków,Poland
+2026/02/22,Uber,"-5,04 €","-20,95",Transport,Ride Share,Kraków,Poland
+2026/02/22,Jak dojadę,"-6,01 €",-25,Transport,Public Transport App,Kraków,Poland
+2026/02/22,Unicard,"-4,81 €",-20,Utilities,Subscription,Kraków,Poland
+2026/02/22,Żabka,"-3,39 €","-14,09",Food & Drink,Snacks,Kraków,Poland
+2026/02/23,IKEA,"-6,67 €","-27,99",Home,Furniture,Kraków,Poland
+2026/02/23,Micaela,-3 €,"-12,68",Drinks,Vodka,Kraków,Poland
+2026/02/23,Auchan,"-7,76 €","-32,57",Groceries,Weekly Shopping,Kraków,Poland
+2026/02/23,Zebra Print 76604,"-4,77 €",-20,Services,Printing,Kraków,Poland
+2026/02/23,Luwim,"-2,60 €","-10,9",Services,Online Tool,Kraków,Poland
+2026/02/23,Klub Sportowy Cracovia,"-1,20 €",-5,Leisure,Sports,Kraków,Poland
+2026/02/23,Biedronka,"-8,99 €","-37,75",Groceries,Shopping,Kraków,Poland
+2026/02/23,Guilherme L,"-1,30 €","-5,46",Transfer,Personal,Kraków,Poland
+2026/02/23,Uber,"-2,85 €","-11,95",Transport,Ride Share,Kraków,Poland
+2026/02/24,Uber,"-3,08 €","-12,94",Transport,Ride Share,Kraków,Poland
+2026/02/25,McDonald's,"-4,76 €",-20,Food & Drink,Fast Food,Kraków,Poland
+2026/02/25,Auchan,"-26,45 €","-111,06",Groceries,Shopping,Kraków,Poland
+2026/02/25,Amazon,"-23,81 €","-99,95",Shopping,Online Order,Kraków,Poland
+2026/02/25,Uber,"-4,05 €","-16,99",Transport,Ride Share,Kraków,Poland
+2026/02/25,Guilherme L,"+2,00 €","8,4",Income,Transfer Received,Kraków,Poland
+2026/02/26,Uber,"-3,33 €","-13,96",Transport,Ride Share,Kraków,Poland
+2026/02/26,Maria D,"-5,95 €",-25,ESN,Board Games,Kraków,Poland
+2026/02/26,Żabka,"-0,96 €","-3,99",Food & Drink,Snacks,Kraków,Poland
+2026/02/27,Maria D,,-25,ESN,Obwarzanek,Kraków,Poland
+2026/02/27,F.h Kabanosik R. Bob 02,,-20,Groceries,Snacks,Kraków,Poland
+2026/02/27,Krakowska 6 Kiosk Pasib,,-25,Food & Drink,Kiosk,Kraków,Poland
+2026/02/27,Kasownik Ztp Krakow K1,,-4,Transport,Ticket,Kraków,Poland
+2026/02/28,Jak dojadę,"-6,01 €",-25,Transport,Public Transport App,Kraków,Poland
+2026/02/28,McDonald's,"-8,63 €","-35,9",Food & Drink,Fast Food,Kraków,Poland
+2026/02/28,Adriana,"-15,35 €","-64,88",Trips,Stays,Zakopane,Poland
+2026/02/28,Micaela,"-16,10 €","-68,05",Trips,Transport,Zakopane,Poland
+2026/02/28,MPK Kraków,,-6,Transport,Ticket,Kraków,Poland
+2026/02/28,Biedronka,,"-14,97",Groceries,Shopping,Kraków,Poland
+2026/02/28,Amazon,,"-82,8",Shopping,Online Order,Kraków,Poland
+2026/02/28,Amazon,,"-20,99",Shopping,Online Order,Kraków,Poland
+2026/02/28,Amazon Prime,,0,Subscription,Verification,Kraków,Poland
+2026/03/01,Guilherme L,,"-7,32",Transport,Ride Share,Kraków,Poland
+2026/03/02,Akademia Górniczo-Hutnicza,,-22,Education,Opłata za ELS,Kraków,Poland
+2026/03/02,Decathlon,,"-149,99",Shopping,Sports Gear,Kraków,Poland
+2026/03/02,Auchan,,"-86,92",Groceries,Shopping,Kraków,Poland
+2026/03/02,Uber,,"-11,98",Transport,Ride Share,Kraków,Poland
+2026/03/02,Guilherme L,,"5,95",Income,Transfer Received,Kraków,Poland
+2026/03/03,Jak dojadę,,-25,Transport,Public Transport App,Kraków,Poland
+2026/03/03,Biedronka,,"-16,98",Groceries,Shopping,Kraków,Poland
+2026/03/04,Gabriel B,"-1,01€","-4,25",Transport,Ride Share,Kraków,Poland
+2026/03/04,Ryanair,"-71,62 €","-300,86",Trips,Transport,København,Denmark
+2026/03/05,Maria D,"-6,89 €",-29,ESN,Cosmic Games,Kraków,Poland
+2026/03/05,Biedronka,"-9,28 €","-39,09",Groceries,Shopping,Kraków,Poland
+2026/03/05,Biedronka,"-1,67 €","-6,99",Groceries,Shopping,Kraków,Poland
+2026/03/06,Guilherme L,"-15,20 €","-65,06",Home,Furniture,Kraków,Poland
+2026/03/06,Chochołowskie Termy Sp,"-35,37 €",-149,Leisure,Thermal Baths,Zakopane,Poland
+2026/03/07,Uber,"-4,28 €","-17,95",Transport,Ride Share,Zakopane,Poland
+2026/03/07,Pedro S,"-6,47 €",-27,Transfer,Outgoing Transfer,Zakopane,Poland
+2026/03/07,Pedro S,"-1,69 €",-7,Transfer,Outgoing Transfer,Zakopane,Poland
+2026/03/07,Żabka,"-2,88 €","-11,98",Groceries,Shopping,Zakopane,Poland
+2026/03/08,Żabka,"-2,81 €","-11,69",Groceries,Shopping,Zakopane,Poland
+2026/03/08,McDonald's,"-4,81 €",-20,Food,Dining,Zakopane,Poland
+2026/03/08,McDonald's,"-6,96 €",-29,Food,Dining,Zakopane,Poland
+2026/03/08,Bolt,"-2,31 €","-9,89",Transport,Ride Share,Zakopane,Poland
+2026/03/09,Amazon,"-5,22 €","-21,99",Shopping,Online Order,Kraków,Poland
+2026/03/09,Biedronka,"-14,32 €","-60,41",Groceries,Shopping,Kraków,Poland
+2026/03/09,Guilherme L,"-1,04 €","-4,37",Transport,For Bolt,Zakopane,Poland
+2026/03/09,Guilherme L,"-1,70 €","-7,28",Transport,For Bolt,Zakopane,Poland
+2026/03/09,Lourenço P,"-2,75 €","-11,69",Transport,For Uber,Zakopane,Poland
+2026/03/09,Todos,"-24,61 €","-104,65",Transport,Ubers zako,Zakopane,Poland
+2026/03/10,FlixBus,"-23,03 €","-97,88",Trips,Transport,København,Denmark
+2026/03/10,FlixBus,"-7,28 €","-30,94",Trips,Transport,København,Denmark
+2026/03/10,SJ,"-22,27 €","-94,65",Trips,Transport,København,Denmark
+2026/03/11,Biedronka,"-9,22 €","-38,6",Groceries,Shopping,Kraków,Poland
+2026/03/11,Jak dojadę,"-4,78 €",-20,Transport,Public Transport App,Kraków,Poland
+2026/03/11,Maria D,"-7,16 €",-30,ESN,Escape Room,Kraków,Poland
+2026/03/11,Maria D,"-9,54 €",-40,ESN,Climbing,Kraków,Poland
+2026/03/12,Biedronka,"-5,07 €","-21,53",Groceries,Shopping,Kraków,Poland
+2026/03/12,AGH Dorms,"-146,23 €",-617,Rent,Dorms,Kraków,Poland
+2026/03/13,DSB,"-4,03 €","-17,20",Transport,Train,København,Denmark
+2026/03/13,IKEA,"-1,21 €","-5,16",Food,Dining,København,Denmark
+2026/03/13,IKEA,"-2,02 €","-8,62",Food,Dining,København,Denmark
+2026/03/13,The Copenhagen Metro,"-3,22 €","-13,74",Transport,Metro,København,Denmark
+2026/03/13,MAX Burgers,"-4,03 €","-17,20",Food,Dining,København,Denmark
+2026/03/14,SANIBOX,"-0,94 €","-4,01",Necessities,WC,København,Denmark
+2026/03/14,Lidl,"-5,01 €","-21,38",Groceries,Shopping,København,Denmark
+2026/03/14,Uber,"-3,60 €","-15,36",Transport,Ride Share,København,Denmark
+2026/03/14,Lidl,"-2,79 €","-11,91",Groceries,Shopping,København,Denmark
+2026/03/14,McDonald's,"-1,88 €","-8,02",Food,Dining,København,Denmark
+2026/03/14,Vaasttrafik,"-3,47 €","-14,81",Transport,Train,København,Denmark
+2026/03/15,Lidl,"-2,50 €","-10,67",Groceries,Shopping,København,Denmark
+2026/03/15,Lidl,"-1,41 €","-6,02",Groceries,Shopping,København,Denmark
+2026/03/15,MAX Burgers,"-2,82 €","-12,04",Food,Dining,København,Denmark
+2026/03/15,MAX Burgers,"-8,83 €","-37,68",Food,Dining,København,Denmark
+2026/03/16,DSB,"-4,03 €","-17,20",Transport,Train,København,Denmark
+2026/03/16,MPK Kraków,"-1,89 €",-8,Transport,Train,Kraków,Poland
+2026/03/16,Biedronka,"-7,23 €","-30,71",Groceries,Shopping,Kraków,Poland
+2026/03/16,Studenciak,"-2,71 €","-11,49",Groceries,Shopping,Kraków,Poland
