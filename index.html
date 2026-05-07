@@ -9,8 +9,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@latest/font/lucide.min.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -160,6 +162,15 @@
       <div class="category-grid" id="categoryGrid"></div>
     </section>
 
+    <!-- Map Section -->
+    <section class="section">
+      <div class="section-header">
+        <h2>Visited Places Map</h2>
+        <button class="primary-btn btn-sm" onclick="toggleMapModal(true)">+ Add Pin</button>
+      </div>
+      <div class="map-container" id="visitedMap"></div>
+    </section>
+
     <!-- City Comparison -->
     <section class="section">
       <div class="section-header">
@@ -263,6 +274,36 @@
           <div class="modal-footer">
             <button type="button" class="secondary-btn" onclick="toggleModal(false)">Cancel</button>
             <button type="submit" class="primary-btn">Save Expense</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Add Map Pin Modal -->
+    <div class="modal-overlay" id="mapModalOverlay">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>Add Visited Place</h3>
+          <button class="close-btn" onclick="toggleMapModal(false)">&times;</button>
+        </div>
+        <form class="modal-form" id="addPinForm" onsubmit="handleNewMapPin(event)">
+          <div class="form-group">
+            <label>City Name</label>
+            <input type="text" id="pinCity" placeholder="e.g. Paris" required />
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Date of Visit</label>
+              <input type="date" id="pinDate" required />
+            </div>
+            <div class="form-group">
+              <label>Trip</label>
+              <input type="text" id="pinTrip" placeholder="e.g. Bucharest Trip" required />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="secondary-btn" onclick="toggleMapModal(false)">Cancel</button>
+            <button type="submit" class="primary-btn" id="savePinBtn">Save Pin</button>
           </div>
         </form>
       </div>

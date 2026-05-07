@@ -1116,6 +1116,93 @@ body {
   margin-top: var(--space-xl);
 }
 
+/* ---- Map Section ---- */
+.map-container {
+  height: 400px;
+  width: 100%;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  overflow: hidden;
+  z-index: 1; /* Keep leaflet controls below modal overlay */
+}
+
+/* Customizing Leaflet for Dark Mode */
+.leaflet-popup-content-wrapper {
+  background: rgba(17, 24, 39, 0.95) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md) !important;
+  backdrop-filter: blur(10px);
+}
+
+.leaflet-popup-tip {
+  background: rgba(17, 24, 39, 0.95) !important;
+  border: 1px solid var(--border-color);
+}
+
+.leaflet-container a {
+  color: var(--accent-blue) !important;
+}
+
+.leaflet-control-zoom a {
+  background: rgba(17, 24, 39, 0.9) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background: var(--bg-elevated) !important;
+}
+
+.leaflet-popup-content {
+  margin: 13px 19px;
+  line-height: 1.4;
+}
+.popup-title {
+  font-weight: 700;
+  margin-bottom: 5px;
+  font-size: 1.1em;
+}
+.popup-delete-btn {
+  margin-top: 10px;
+  padding: 4px 8px;
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--accent-rose);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.8rem;
+  width: 100%;
+  transition: all 0.2s;
+}
+.popup-delete-btn:hover {
+  background: var(--accent-rose);
+  color: white;
+}
+
+.popup-edit-btn {
+  margin-top: 10px;
+  padding: 4px 8px;
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--accent-blue);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.8rem;
+  width: 100%;
+  transition: all 0.2s;
+}
+.popup-edit-btn:hover {
+  background: var(--accent-blue);
+  color: white;
+}
+
+.custom-trip-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
 /* ---- Animations ---- */
 @keyframes fadeInUp {
   from {

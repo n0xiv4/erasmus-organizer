@@ -22,6 +22,11 @@ let categoryChart = null;
 let timeView = 'daily';
 let editingExpenseId = null;
 
+// ---- Map State ----
+let visitedMapInstance = null;
+let mapMarkers = [];
+let editingPinId = null;
+
 // ---- Auth Logic ----
 async function handleAuth(e) {
   e.preventDefault();
@@ -64,6 +69,11 @@ async function initApp() {
   });
 
   await fetchData();
+  
+  // Initialize map if not already done
+  setTimeout(() => {
+    if (!visitedMapInstance) setupMap();
+  }, 100);
 }
 
 async function fetchData() {
@@ -370,7 +380,21 @@ function toggleModal(show) {
   if (show) {
     if (!editingExpenseId) {
       if (transactions && transactions.length > 0) {
-        let dtStr = transactions[0].date;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        let targetTx = transactions[0];
+        for (const t of transactions) {
+          let tDtStr = t.date;
+          if (tDtStr.includes('/')) tDtStr = tDtStr.replace(/\//g, '-');
+          const tDt = new Date(tDtStr);
+          if (!isNaN(tDt.getTime()) && tDt <= today) {
+            targetTx = t;
+            break;
+          }
+        }
+        
+        let dtStr = targetTx.date;
         if (dtStr.includes('/')) dtStr = dtStr.replace(/\//g, '-');
         const dt = new Date(dtStr);
         if (!isNaN(dt.getTime())) {
@@ -380,8 +404,8 @@ function toggleModal(show) {
           document.getElementById('expDate').valueAsDate = new Date();
         }
         
-        document.getElementById('expCity').value = transactions[0].city || '';
-        document.getElementById('expCountry').value = transactions[0].country || '';
+        document.getElementById('expCity').value = targetTx.city || '';
+        document.getElementById('expCountry').value = targetTx.country || '';
       } else {
         document.getElementById('expDate').valueAsDate = new Date();
       }
@@ -997,3 +1021,232 @@ function renderTable() {
       </tr>`;
   }).join('');
 }
+
+// ---- Map Logic ----
+function getVisitedPinsKey() {
+  return `erasmus_pins_${user ? user.id : 'guest'}`;
+}
+
+function loadMapPins() {
+  try {
+    const data = localStorage.getItem(getVisitedPinsKey());
+    return data ? JSON.parse(data) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveMapPins(pins) {
+  localStorage.setItem(getVisitedPinsKey(), JSON.stringify(pins));
+}
+
+function setupMap() {
+  const mapContainer = document.getElementById('visitedMap');
+  if (!mapContainer || !window.L) return;
+
+  // Center map on Europe
+  visitedMapInstance = L.map('visitedMap').setView([50.0, 15.0], 4);
+
+  // Use a dark theme map tile layer (CartoDB Dark Matter)
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 19
+  }).addTo(visitedMapInstance);
+
+  // Render existing pins
+  renderMapPins();
+}
+
+function toggleMapModal(show) {
+  const overlay = document.getElementById('mapModalOverlay');
+  overlay.className = show ? 'modal-overlay active' : 'modal-overlay';
+  if (!show) {
+    editingPinId = null;
+    document.getElementById('addPinForm').reset();
+    document.getElementById('savePinBtn').innerText = 'Save Pin';
+    document.getElementById('savePinBtn').disabled = false;
+    document.querySelector('#mapModalOverlay .modal-header h3').textContent = 'Add Visited Place';
+  }
+}
+
+window.editMapPin = function(id) {
+  const pins = loadMapPins();
+  const pin = pins.find(p => p.id === id);
+  if (!pin) return;
+  
+  editingPinId = id;
+  document.getElementById('pinCity').value = pin.name;
+  
+  let dtStr = pin.date;
+  if (dtStr) {
+    const dt = new Date(dtStr);
+    if (!isNaN(dt.getTime())) {
+      const pad = n => n.toString().padStart(2, '0');
+      document.getElementById('pinDate').value = `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}`;
+    }
+  }
+  
+  document.getElementById('pinTrip').value = pin.trip || '';
+  
+  document.querySelector('#mapModalOverlay .modal-header h3').textContent = 'Edit Visited Place';
+  document.getElementById('savePinBtn').innerText = 'Update Pin';
+  toggleMapModal(true);
+};
+
+async function handleNewMapPin(e) {
+  e.preventDefault();
+  
+  const city = document.getElementById('pinCity').value.trim();
+  const date = document.getElementById('pinDate').value;
+  const trip = document.getElementById('pinTrip').value.trim();
+  const btn = document.getElementById('savePinBtn');
+  
+  btn.innerText = editingPinId ? 'Updating...' : 'Finding Location...';
+  btn.disabled = true;
+
+  try {
+    const pins = loadMapPins();
+    
+    // Check if we are editing an existing pin and the city name hasn't changed
+    let lat = null;
+    let lng = null;
+    let existingPinIndex = -1;
+    
+    if (editingPinId) {
+      existingPinIndex = pins.findIndex(p => p.id === editingPinId);
+      if (existingPinIndex !== -1 && pins[existingPinIndex].name.toLowerCase() === city.toLowerCase()) {
+        // City name hasn't changed, reuse coordinates
+        lat = pins[existingPinIndex].lat;
+        lng = pins[existingPinIndex].lng;
+      }
+    }
+    
+    // If we don't have coordinates yet (new pin or city name changed), geocode it
+    if (lat === null || lng === null) {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(city)}&limit=1`);
+      const data = await res.json();
+      
+      if (!data || data.length === 0) {
+        alert(`Could not find coordinates for "${city}". Please check the spelling.`);
+        btn.innerText = editingPinId ? 'Update Pin' : 'Save Pin';
+        btn.disabled = false;
+        return;
+      }
+      lat = parseFloat(data[0].lat);
+      lng = parseFloat(data[0].lon);
+    }
+
+    if (editingPinId && existingPinIndex !== -1) {
+      // Update existing pin
+      pins[existingPinIndex] = {
+        ...pins[existingPinIndex],
+        name: city,
+        lat: lat,
+        lng: lng,
+        date: date,
+        trip: trip
+      };
+    } else {
+      // Create new pin
+      const newPin = {
+        id: Date.now().toString(),
+        name: city,
+        lat: lat,
+        lng: lng,
+        date: date,
+        trip: trip
+      };
+      pins.push(newPin);
+    }
+
+    saveMapPins(pins);
+    renderMapPins();
+    toggleMapModal(false);
+  } catch (err) {
+    console.error(err);
+    alert('Error connecting to mapping service. Please try again.');
+    btn.innerText = editingPinId ? 'Update Pin' : 'Save Pin';
+    btn.disabled = false;
+  }
+}
+
+const TRIP_COLORS = [
+  '#f97316', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899', 
+  '#14b8a6', '#f59e0b', '#0ea5e9', '#ef4444', '#84cc16'
+];
+
+function renderMapPins() {
+  if (!visitedMapInstance) return;
+
+  // Clear existing markers
+  mapMarkers.forEach(m => visitedMapInstance.removeLayer(m));
+  mapMarkers = [];
+
+  const pins = loadMapPins();
+  
+  // Map trips to colors
+  const tripColors = {};
+  let colorIndex = 0;
+  
+  pins.forEach(pin => {
+    const pinTrip = pin.trip || 'Unknown Trip';
+    if (!tripColors[pinTrip]) {
+      tripColors[pinTrip] = TRIP_COLORS[colorIndex % TRIP_COLORS.length];
+      colorIndex++;
+    }
+    
+    const pinColor = tripColors[pinTrip];
+    
+    const markerHtml = `
+      <div style="transform: translate(-50%, -100%); width: 30px; height: 30px;">
+        <svg viewBox="0 0 24 24" fill="${pinColor}" width="30" height="30" stroke="rgba(17, 24, 39, 0.9)" stroke-width="2">
+          <path d="M12 21C12 21 19 14.5 19 9.5C19 5.35786 15.6421 2 12 2C8.35786 2 5 5.35786 5 9.5C5 14.5 12 21 12 21Z" />
+          <circle cx="12" cy="9.5" r="3.5" fill="white" stroke="none" />
+        </svg>
+      </div>
+    `;
+
+    const customIcon = L.divIcon({
+      className: 'custom-trip-marker',
+      html: markerHtml,
+      iconSize: [30, 30],
+      iconAnchor: [0, 0], // The transform translates it correctly
+      popupAnchor: [0, -30]
+    });
+
+    const marker = L.marker([pin.lat, pin.lng], { icon: customIcon }).addTo(visitedMapInstance);
+    
+    // Create a popup with delete button
+    const popupContent = document.createElement('div');
+    popupContent.className = 'custom-map-popup';
+    
+    // Fallbacks for older pins
+    const pinDate = pin.date ? new Date(pin.date).toLocaleDateString() : 'Unknown Date';
+
+    popupContent.innerHTML = `
+      <div class="popup-title">📍 ${pin.name}</div>
+      <div style="font-size: 0.8rem; color: var(--text-tertiary); margin-bottom: 2px;">
+        <strong>Date:</strong> ${pinDate}
+      </div>
+      <div style="font-size: 0.8rem; color: var(--text-tertiary); margin-bottom: 5px;">
+        <strong>Trip:</strong> <span style="color:${pinColor}; font-weight:700;">${pinTrip}</span>
+      </div>
+      <div style="display: flex; gap: 8px; margin-top: 10px;">
+        <button class="popup-edit-btn" onclick="editMapPin('${pin.id}')">Edit</button>
+        <button class="popup-delete-btn" style="margin-top: 0;" onclick="deleteMapPin('${pin.id}')">Delete</button>
+      </div>
+    `;
+    
+    marker.bindPopup(popupContent);
+    mapMarkers.push(marker);
+  });
+}
+
+window.deleteMapPin = function(id) {
+  if (!confirm('Are you sure you want to remove this pin?')) return;
+  const pins = loadMapPins();
+  const filtered = pins.filter(p => p.id !== id);
+  saveMapPins(filtered);
+  renderMapPins();
+};
