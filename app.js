@@ -70,10 +70,15 @@ async function initApp() {
 
   await fetchData();
   
-  // Initialize map if not already done
-  setTimeout(() => {
-    if (!visitedMapInstance) setupMap();
-  }, 100);
+  // Initialize map if not already done, retrying if Leaflet is slow to load
+  const trySetupMap = () => {
+    if (window.L && document.getElementById('visitedMap')) {
+      if (!visitedMapInstance) setupMap();
+    } else {
+      setTimeout(trySetupMap, 200);
+    }
+  };
+  trySetupMap();
 }
 
 async function fetchData() {
@@ -381,31 +386,38 @@ function toggleModal(show) {
     if (!editingExpenseId) {
       if (transactions && transactions.length > 0) {
         const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        today.setHours(23, 59, 59, 999);
         
-        let targetTx = transactions[0];
+        let bestDate = null;
+        let targetTx = null;
+
         for (const t of transactions) {
           let tDtStr = t.date;
           if (tDtStr.includes('/')) tDtStr = tDtStr.replace(/\//g, '-');
           const tDt = new Date(tDtStr);
           if (!isNaN(tDt.getTime()) && tDt <= today) {
-            targetTx = t;
-            break;
+            if (!bestDate || tDt > bestDate) {
+              bestDate = tDt;
+              targetTx = t;
+            }
           }
         }
         
-        let dtStr = targetTx.date;
-        if (dtStr.includes('/')) dtStr = dtStr.replace(/\//g, '-');
-        const dt = new Date(dtStr);
-        if (!isNaN(dt.getTime())) {
-          const pad = n => n.toString().padStart(2, '0');
-          document.getElementById('expDate').value = `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}`;
+        if (targetTx) {
+          let dtStr = targetTx.date;
+          if (dtStr.includes('/')) dtStr = dtStr.replace(/\//g, '-');
+          const dt = new Date(dtStr);
+          if (!isNaN(dt.getTime())) {
+            const pad = n => n.toString().padStart(2, '0');
+            document.getElementById('expDate').value = `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}`;
+          } else {
+            document.getElementById('expDate').valueAsDate = new Date();
+          }
+          document.getElementById('expCity').value = targetTx.city || '';
+          document.getElementById('expCountry').value = targetTx.country || '';
         } else {
           document.getElementById('expDate').valueAsDate = new Date();
         }
-        
-        document.getElementById('expCity').value = targetTx.city || '';
-        document.getElementById('expCountry').value = targetTx.country || '';
       } else {
         document.getElementById('expDate').valueAsDate = new Date();
       }
