@@ -25,6 +25,7 @@ let editingExpenseId = null;
 // ---- Map State ----
 let visitedMapInstance = null;
 let mapMarkers = [];
+let mapPins = [];
 let editingPinId = null;
 
 // ---- Auth Logic ----
@@ -69,6 +70,7 @@ async function initApp() {
   });
 
   await fetchData();
+  await fetchMapPins();
   
   // Initialize map if not already done, retrying if Leaflet is slow to load
   const trySetupMap = () => {
@@ -1035,21 +1037,50 @@ function renderTable() {
 }
 
 // ---- Map Logic ----
-function getVisitedPinsKey() {
-  return `erasmus_pins_${user ? user.id : 'guest'}`;
-}
-
-function loadMapPins() {
+async function fetchMapPins() {
+  // Migrate local pins to Supabase if any exist
+  const localKey = `erasmus_pins_${user ? user.id : 'guest'}`;
   try {
-    const data = localStorage.getItem(getVisitedPinsKey());
-    return data ? JSON.parse(data) : [];
+    const localData = localStorage.getItem(localKey);
+    if (localData) {
+      const localPins = JSON.parse(localData);
+      if (localPins && localPins.length > 0) {
+        // Map local pins to Supabase format
+        const pinsToInsert = localPins.map(p => ({
+          user_id: user.id,
+          name: p.name,
+          lat: p.lat,
+          lng: p.lng,
+          date: p.date,
+          trip: p.trip || ''
+        }));
+        
+        const { error: migErr } = await supabaseClient.from('visited_places').insert(pinsToInsert);
+        if (!migErr) {
+          localStorage.removeItem(localKey); // Clear local after successful migration
+        } else {
+          console.error("Migration failed:", migErr);
+        }
+      } else {
+        localStorage.removeItem(localKey);
+      }
+    }
   } catch (e) {
-    return [];
+    console.error("Error migrating local pins:", e);
   }
-}
 
-function saveMapPins(pins) {
-  localStorage.setItem(getVisitedPinsKey(), JSON.stringify(pins));
+  // Fetch pins from Supabase
+  const { data, error } = await supabaseClient
+    .from('visited_places')
+    .select('*')
+    .order('created_at', { ascending: true });
+
+  if (!error && data) {
+    mapPins = data;
+    renderMapPins();
+  } else {
+    console.error("Error fetching pins:", error);
+  }
 }
 
 function setupMap() {
@@ -1083,8 +1114,7 @@ function toggleMapModal(show) {
 }
 
 window.editMapPin = function(id) {
-  const pins = loadMapPins();
-  const pin = pins.find(p => p.id === id);
+  const pin = mapPins.find(p => p.id === id);
   if (!pin) return;
   
   editingPinId = id;
@@ -1118,19 +1148,17 @@ async function handleNewMapPin(e) {
   btn.disabled = true;
 
   try {
-    const pins = loadMapPins();
-    
     // Check if we are editing an existing pin and the city name hasn't changed
     let lat = null;
     let lng = null;
-    let existingPinIndex = -1;
+    let existingPin = null;
     
     if (editingPinId) {
-      existingPinIndex = pins.findIndex(p => p.id === editingPinId);
-      if (existingPinIndex !== -1 && pins[existingPinIndex].name.toLowerCase() === city.toLowerCase()) {
+      existingPin = mapPins.find(p => p.id === editingPinId);
+      if (existingPin && existingPin.name.toLowerCase() === city.toLowerCase()) {
         // City name hasn't changed, reuse coordinates
-        lat = pins[existingPinIndex].lat;
-        lng = pins[existingPinIndex].lng;
+        lat = existingPin.lat;
+        lng = existingPin.lng;
       }
     }
     
@@ -1149,31 +1177,26 @@ async function handleNewMapPin(e) {
       lng = parseFloat(data[0].lon);
     }
 
-    if (editingPinId && existingPinIndex !== -1) {
-      // Update existing pin
-      pins[existingPinIndex] = {
-        ...pins[existingPinIndex],
-        name: city,
-        lat: lat,
-        lng: lng,
-        date: date,
-        trip: trip
-      };
+    const pinPayload = {
+      name: city,
+      lat: lat,
+      lng: lng,
+      date: date || null,
+      trip: trip,
+      user_id: user.id
+    };
+
+    if (editingPinId && existingPin) {
+      // Update existing pin in Supabase
+      const { error } = await supabaseClient.from('visited_places').update(pinPayload).eq('id', editingPinId);
+      if (error) throw error;
     } else {
-      // Create new pin
-      const newPin = {
-        id: Date.now().toString(),
-        name: city,
-        lat: lat,
-        lng: lng,
-        date: date,
-        trip: trip
-      };
-      pins.push(newPin);
+      // Create new pin in Supabase
+      const { error } = await supabaseClient.from('visited_places').insert([pinPayload]);
+      if (error) throw error;
     }
 
-    saveMapPins(pins);
-    renderMapPins();
+    await fetchMapPins();
     toggleMapModal(false);
   } catch (err) {
     console.error(err);
@@ -1194,14 +1217,12 @@ function renderMapPins() {
   // Clear existing markers
   mapMarkers.forEach(m => visitedMapInstance.removeLayer(m));
   mapMarkers = [];
-
-  const pins = loadMapPins();
   
   // Map trips to colors
   const tripColors = {};
   let colorIndex = 0;
   
-  pins.forEach(pin => {
+  mapPins.forEach(pin => {
     const pinTrip = pin.trip || 'Unknown Trip';
     if (!tripColors[pinTrip]) {
       tripColors[pinTrip] = TRIP_COLORS[colorIndex % TRIP_COLORS.length];
@@ -1255,10 +1276,12 @@ function renderMapPins() {
   });
 }
 
-window.deleteMapPin = function(id) {
+window.deleteMapPin = async function(id) {
   if (!confirm('Are you sure you want to remove this pin?')) return;
-  const pins = loadMapPins();
-  const filtered = pins.filter(p => p.id !== id);
-  saveMapPins(filtered);
-  renderMapPins();
+  const { error } = await supabaseClient.from('visited_places').delete().eq('id', id);
+  if (error) {
+    alert("Error deleting pin: " + error.message);
+  } else {
+    await fetchMapPins();
+  }
 };
