@@ -865,6 +865,12 @@ body {
   box-shadow: var(--shadow-md);
 }
 
+.city-card.active {
+  border-color: var(--accent-blue);
+  background: var(--bg-elevated);
+  box-shadow: 0 0 0 1px var(--accent-blue);
+}
+
 .city-header {
   display: flex;
   align-items: center;

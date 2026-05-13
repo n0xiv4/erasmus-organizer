@@ -16,6 +16,7 @@ let sortField = 'date';
 let sortDir = 'desc';
 let searchQuery = '';
 let filterCategory = 'all';
+let filterCity = null;
 let globalDateFilter = 'all';
 let spendingChart = null;
 let categoryChart = null;
@@ -510,8 +511,13 @@ function fmtSigned(val) {
   return `${sign}${abs.toFixed(2)} zł`;
 }
 
-function getExpenses() {
-  return transactions.filter(t => getAmount(t) < 0 && isDateInFilter(t.date));
+function getExpenses(ignoreCity = false) {
+  return transactions.filter(t => {
+    if (getAmount(t) >= 0) return false;
+    if (!isDateInFilter(t.date)) return false;
+    if (!ignoreCity && filterCity && t.city !== filterCity) return false;
+    return true;
+  });
 }
 
 function getCatConfig(cat) {
@@ -537,7 +543,25 @@ function renderStats() {
   const expenses = getExpenses();
   const totalSpent = expenses.reduce((sum, t) => sum + Math.abs(getAmount(t)), 0);
   const dates = [...new Set(expenses.map(t => t.date))];
-  const dailyAvg = totalSpent / (dates.length || 1);
+  
+  let daysDivisor = dates.length || 1;
+  if (globalDateFilter && globalDateFilter.startsWith('month:')) {
+    const yyyymm = globalDateFilter.split(':')[1];
+    const [year, month] = yyyymm.split('-').map(Number);
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth() + 1;
+    
+    if (year > currentYear || (year === currentYear && month > currentMonth)) {
+      daysDivisor = dates.length || 1;
+    } else if (year === currentYear && month === currentMonth) {
+      daysDivisor = today.getDate() || 1;
+    } else {
+      daysDivisor = new Date(year, month, 0).getDate();
+    }
+  }
+  
+  const dailyAvg = totalSpent / daysDivisor;
   const catTotals = {};
   expenses.forEach(t => {
     const cat = t.category;
@@ -588,7 +612,7 @@ function renderCategoryGrid() {
 // ---- City Grid ----
 function renderCityGrid() {
   const grid = document.getElementById('cityGrid');
-  const expenses = getExpenses();
+  const expenses = getExpenses(true);
   const cityData = {};
   expenses.forEach(t => {
     const key = `${t.city}|${t.country}`;
@@ -601,8 +625,10 @@ function renderCityGrid() {
 
   grid.innerHTML = sorted.map((cd, i) => {
     const flag = getFlag(cd.country);
+    const isSelected = filterCity === cd.city;
+    const cardClass = isSelected ? 'city-card active' : 'city-card';
     return `
-      <div class="city-card" style="animation-delay:${i * 0.06}s">
+      <div class="${cardClass}" style="animation-delay:${i * 0.06}s; cursor:pointer;" onclick="toggleCityFilter('${cd.city.replace(/'/g, "\\'")}')">
         <div class="city-header">
           <div class="city-name">
             <span class="city-flag">${flag}</span>
@@ -616,6 +642,15 @@ function renderCityGrid() {
         </div>
       </div>`;
   }).join('');
+}
+
+function toggleCityFilter(city) {
+  if (filterCity === city) {
+    filterCity = null;
+  } else {
+    filterCity = city;
+  }
+  render();
 }
 
 // ---- Spending Chart ----
@@ -971,6 +1006,10 @@ function renderTable() {
     filtered = filtered.filter(t => t.category === filterCategory);
   }
 
+  if (filterCity) {
+    filtered = filtered.filter(t => t.city === filterCity);
+  }
+
   // Search
   if (searchQuery) {
     filtered = filtered.filter(t =>
@@ -1072,8 +1111,7 @@ async function fetchMapPins() {
   // Fetch pins from Supabase
   const { data, error } = await supabaseClient
     .from('visited_places')
-    .select('*')
-    .order('created_at', { ascending: true });
+    .select('*');
 
   if (!error && data) {
     mapPins = data;
